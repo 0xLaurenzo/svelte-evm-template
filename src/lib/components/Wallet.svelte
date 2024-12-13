@@ -1,9 +1,16 @@
 <script lang="ts">
-    import { evmConnect, evmWalletsInformation } from "$lib/wallet/wallet";
+    import { evmConnect, evmWalletsInformation, sepoliaStore } from "$lib/wallet/wallet";
     import type { EvmWalletId } from "$lib/wallet/wallet";
     import { slide } from 'svelte/transition';
     
     let isOpen = false;
+    
+    $: address = $sepoliaStore.address;
+    $: isConnected = $sepoliaStore.connectionStatus === 'connected';
+
+    function formatAddress(addr: string): string {
+        return addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : 'Connect Wallet';
+    }
 
     async function handleWalletConnection(walletId: EvmWalletId) {
         try {
@@ -28,7 +35,7 @@
         on:click={toggleDropdown}
         aria-expanded={isOpen}
     >
-        Connect Wallet
+        {isConnected ? formatAddress(address) : 'Connect Wallet'}
     </button>
 
     {#if isOpen}
