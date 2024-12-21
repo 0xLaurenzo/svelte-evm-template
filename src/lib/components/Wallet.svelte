@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { evmConnect, evmWalletsArray, evmWalletStore } from "$lib/wallet/wallet";
+    import { evmWalletsArray, evmWalletStore } from "$lib/wallet/wallet";
     import type { EvmWalletId } from "$lib/wallet/wallet";
     import { slide } from 'svelte/transition';
     
@@ -20,7 +20,7 @@
     // Handle wallet connection
     async function handleWalletConnection(walletId: EvmWalletId) {
         try {
-            await evmConnect(walletId, 111_55_111); // Default chain ID
+            evmWalletStore.connect(walletId, 111_55_111) // Default chain ID
             isOpen = false;
         } catch (error) {
             console.error("Failed to connect wallet:", error);

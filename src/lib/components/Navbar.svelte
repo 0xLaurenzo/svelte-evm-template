@@ -1,5 +1,6 @@
 <script lang="ts">
-	import Wallet from "./Wallet.svelte";
+	import ChainSelector from "./ChainSelector.svelte";
+import Wallet from "./Wallet.svelte";
 
 </script>
 
@@ -13,7 +14,9 @@
 		<a href="/placeholder2" class="text-black hover:text-gray-600"> Placeholder 2 </a>
 		<a href="/placeholder3" class="text-black hover:text-gray-600"> Placeholder 3 </a>
 	</div>
-	
+	<div>
+		<ChainSelector/>
+	</div>
 	<div>
 		<Wallet/>
 	</div>

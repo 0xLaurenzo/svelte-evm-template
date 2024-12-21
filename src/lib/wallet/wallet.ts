@@ -229,7 +229,7 @@ import { sepolia } from "viem/chains"
   })
   reconnect(config)
   
-  export async function evmConnect(
+  async function evmConnect(
     evmWalletId: EvmWalletId,
     chainId: ConfiguredChainId
   ) {
@@ -237,11 +237,11 @@ import { sepolia } from "viem/chains"
     if (connector) return _connect(config, { connector, chainId })
   }
   
-  export function evmDisconnect() {
+  function evmDisconnect() {
     return _disconnect(config, { connector: getAccount(config).connector })
   }
   
-  export const evmSwitchChain = (chainId: ConfiguredChainId) => _switchChain(config, { chainId })
+  const evmSwitchChain = (chainId: ConfiguredChainId) => _switchChain(config, { chainId })
 
   interface EvmChainWalletStore extends ChainWalletStore<"evm"> {
     availableChains: ConfiguredChainId[];
