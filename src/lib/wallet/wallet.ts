@@ -38,7 +38,7 @@ import { sepolia } from "viem/chains"
     storage: createWagmiStorage({
       serialize,
       deserialize,
-      key: "union-wagmi",
+      key: "svelte-template",
       storage: typeof window !== "undefined" ? window.localStorage : undefined
     }),
     connectors: [
