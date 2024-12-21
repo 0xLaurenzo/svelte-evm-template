@@ -11,7 +11,6 @@ import {
     unstable_connector,
     connect as _connect,
     disconnect as _disconnect,
-    type GetAccountReturnType,
     switchChain as _switchChain,
     createStorage as createWagmiStorage
   } from "@wagmi/core"
@@ -24,19 +23,10 @@ import {
   import type { ChainWalletStore } from "$lib/wallet/types"
   import { derived, writable, type Readable } from "svelte/store"
   import { injected, metaMask, coinbaseWallet } from "@wagmi/connectors"
-  import { sepolia, berachainTestnetbArtio, arbitrumSepolia, scrollSepolia } from "@wagmi/core/chains"
+  import { chains, type ConfiguredChainId, chainTransports, chainMap } from './chains';
+import { sepolia } from "viem/chains"
   
-  
-  export const chains = [sepolia, berachainTestnetbArtio, arbitrumSepolia, scrollSepolia] as const
-  export type ConfiguredChainId = (typeof chains)[number]["id"]
-  
-  export type Wallet = GetAccountReturnType
-  export type ConnectedWallet = Wallet & { status: "connected" }
-  
-  export type ConnectorType = "injected" | "walletConnect"
-  
-  const WALLETCONNECT_PROJECT_ID = "49fe74ca5ded7142adefc69a7788d14a"
-  
+
   export const config = createConfig({
     chains,
     cacheTime: 4_000,
@@ -44,51 +34,7 @@ import {
     syncConnectedChain: true,
     batch: { multicall: true },
     multiInjectedProviderDiscovery: true,
-    transports: {
-      [sepolia.id]: fallback([
-        unstable_connector(injected, {
-          retryCount: 3,
-          retryDelay: 100,
-          key: "unstable_connector-injected-sepolia",
-          name: "unstable_connector-injected-sepolia"
-        }),
-        http(`https://special-summer-film.ethereum-sepolia.quiknode.pro/${KEY.RPC.QUICK_NODE}/`, {
-          name: "QuickNode - Sepolia"
-        }),
-        http(sepolia.rpcUrls.default.http.at(0), { name: "default Sepolia RPC" })
-      ]),
-      [berachainTestnetbArtio.id]: fallback([
-        unstable_connector(injected, {
-          retryCount: 3,
-          retryDelay: 100,
-          key: "unstable_connector-injected-berachain",
-          name: "unstable_connector-injected-berachain"
-        }),
-        http(berachainTestnetbArtio.rpcUrls.default.http.at(0), { name: "default Berachain RPC" })
-      ]),
-      [arbitrumSepolia.id]: fallback([
-        unstable_connector(injected, {
-          retryCount: 3,
-          retryDelay: 100,
-          key: "unstable_connector-injected-berachain",
-          name: "unstable_connector-injected-berachain"
-        }),
-        http(arbitrumSepolia.rpcUrls.default.http.at(0), { name: "default Arbitrum Sepolia RPC" })
-      ]),
-      [scrollSepolia.id]: fallback([
-        unstable_connector(injected, {
-          retryCount: 3,
-          retryDelay: 100,
-          key: "unstable_connector-injected-scroll-sepolia",
-          name: "unstable_connector-injected-scroll-sepolia"
-        }),
-        http(
-          "https://sparkling-shy-hill.scroll-testnet.quiknode.pro/71674ce271d10786bb3e2fb69e8f788b784c2e89/",
-          { name: "QuickNode - Scroll Sepolia" }
-        ),
-        http(scrollSepolia.rpcUrls.default.http.at(0), { name: "default Scroll Sepolia RPC" })
-      ])
-    },
+    transports: chainTransports,
     storage: createWagmiStorage({
       serialize,
       deserialize,
@@ -116,7 +62,7 @@ import {
           name: APP_INFO.name,
           url: APP_INFO.baseUrl,
           iconUrl: APP_INFO.iconUrl,
-          base64Icon: APP_INFO.base64Icon
+          base64Icon: APP_INFO.base64Icon || ''
         },
         // default values
         useDeeplink: false,
@@ -133,49 +79,78 @@ import {
     }
   )
   
-  export function createSepoliaStore(
-    previousState: Omit<ChainWalletStore<"evm">, "rawAddress"> = {
-      chain: "sepolia",
+  function createInitialState(
+    chains: ConfiguredChainId[],
+    defaultChain: ConfiguredChainId
+  ): Omit<EvmChainWalletStore, "rawAddress"> {
+    return {
+      chain: chainMap[defaultChain].name,
       hoverState: "none",
       address: getAccount(config).address,
       connectionStatus: getAccount(config).status,
-      connectedWallet: getAccount(config).connector?.id || "injected"
-    }
+      connectedWallet: getAccount(config).connector?.id || "injected",
+      availableChains: chains,
+      activeChain: defaultChain,
+      chainSwitchingStatus: 'idle',
+      chainSpecificStates: chains.reduce((acc, chain) => ({
+        ...acc,
+        [chain]: { connectionStatus: 'disconnected' as const }
+      }), {} as Record<ConfiguredChainId, { connectionStatus: string; lastConnected?: Date }>)
+    };
+  }
+  
+  export function createEvmWalletStore(
+    initialState: Omit<EvmChainWalletStore, "rawAddress"> = createInitialState(chains.map(chain => chain.id), sepolia.id)
   ) {
-    const { subscribe, set, update } = writable(previousState)
+    const { subscribe, set, update } = writable(initialState);
+    
     return {
-      set,
-      update,
-      subscribe,
-      connect: async (walletId: EvmWalletId) => {
-        await evmConnect(walletId, sepolia.id)
-      },
-      disconnect: async () => {
-        await Promise.all([
-          await evmDisconnect().catch(error => {
-            console.error(error)
-          }),
-          ...config.connectors.map(connector =>
-            connector.disconnect().catch(error => {
-              console.error(error)
-            })
-          )
-        ])
-        // await sleep(1_000)
-      }
+        set,
+        update,
+        subscribe,
+        connect: async (walletId: EvmWalletId, chainId: ConfiguredChainId) => {
+            await evmConnect(walletId, chainId)
+        },
+        switchChain: async (chainId: ConfiguredChainId) => {
+            update(state => ({ ...state, chainSwitchingStatus: 'switching' }))
+            try {
+                await evmSwitchChain(chainId)
+                update(state => ({
+                    ...state,
+                    activeChain: chainId,
+                    chainSwitchingStatus: 'idle'
+                }))
+            } catch (error) {
+                update(state => ({ ...state, chainSwitchingStatus: 'error' }))
+                throw error
+            }
+        },
+        disconnect: async () => {
+            await Promise.all([
+                await evmDisconnect().catch(error => {
+                    console.error(error)
+                }),
+                ...config.connectors.map(connector =>
+                    connector.disconnect().catch(error => {
+                        console.error(error)
+                    })
+                )
+            ])
+            // await sleep(1_000)
+        }
     }
   }
   
-  export const sepoliaStore = createSepoliaStore()
+  export const evmWalletStore = createEvmWalletStore()
   
   export const userAddrEvm: Readable<UserAddressEvm | null> = derived(
-    [sepoliaStore],
-    ([$sepoliaStore]) => {
-      if ($sepoliaStore?.address) {
-        const evm_normalized = $sepoliaStore.address.slice(2).toLowerCase()
+    [evmWalletStore],
+    ([$evmWalletStore]) => {
+      if ($evmWalletStore?.address) {
+        const evm_normalized = $evmWalletStore.address.slice(2).toLowerCase()
         return {
-          canonical: $sepoliaStore.address as Address,
-          normalized: $sepoliaStore.address.slice(2).toLowerCase(),
+          canonical: $evmWalletStore.address as Address,
+          normalized: $evmWalletStore.address.slice(2).toLowerCase(),
           normalized_prefixed: `0x${evm_normalized}` as Address
         }
       }
@@ -185,13 +160,24 @@ import {
   )
   
   /**
+   * Default list of wallets to exclude from EIP-6963 auto-detection
+   */
+  export const DEFAULT_EXCLUDED_WALLETS = ["io.leapwallet.LeapWallet", "app.keplr"] as const
+  
+  /**
+   * Configuration for EVM wallet detection
+   */
+  export interface EvmWalletConfig {
+    excludeWallets?: readonly string[]
+  }
+  
+  /**
    * Any wallet that supports EIP-6963 will automatically show up.
    * We explicitly filter out problematic wallets: hijacking window.ethereum, etc.
    */
-  
-  const excludeWalletList = ["io.leapwallet.LeapWallet", "app.keplr"]
-  
-  export const evmWalletsInformation = config.connectors
+  export const evmWalletsInformation = (
+    excludeWallets: readonly string[] = DEFAULT_EXCLUDED_WALLETS
+  ) => config.connectors
     .map(connector => {
       const id = connector.id.toLowerCase()
       const name = connector.name.toLowerCase()
@@ -207,29 +193,41 @@ import {
               : name.includes("coinbase")
                 ? "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' fill='none'%3E%3Cpath d='M28 56c15.464 0 28-12.536 28-28S43.464 0 28 0 0 12.536 0 28s12.536 28 28 28Z' fill='%231B53E4'/%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M7 28c0 11.598 9.402 21 21 21s21-9.402 21-21S39.598 7 28 7 7 16.402 7 28Zm17.234-6.766a3 3 0 0 0-3 3v7.533a3 3 0 0 0 3 3h7.533a3 3 0 0 0 3-3v-7.533a3 3 0 0 0-3-3h-7.533Z' fill='%23fff'/%3E%3C/svg%3E"
                 : connector.icon) as string,
-        type: connector.type as ConnectorType,
+        type: connector.type,
         download: ""
       }
     })
-    .filter(wallet => !excludeWalletList.includes(wallet.id)) satisfies Array<Connector>
+    .filter(wallet => !excludeWallets.includes(wallet.id)) satisfies Array<Connector>
   
-  export type EvmWalletId = (typeof evmWalletsInformation)[number]["id"]
+  // Call the function to get the array and infer the type
+  export const evmWalletsArray = evmWalletsInformation();
+  export type EvmWalletId = (typeof evmWalletsArray)[number]["id"];
   
   watchAccount(config, {
     onChange: account =>
-      sepoliaStore.set({
+      evmWalletStore.set({
         chain: account.chain?.name ?? "sepolia",
         hoverState: "none",
         address: account.address,
         connectionStatus: account.status,
-        connectedWallet: account.connector?.id
+        connectedWallet: account.connector?.id,
+        availableChains: chains.map(chain => chain.id),
+        activeChain: account.chain?.id ?? sepolia.id,
+        chainSwitchingStatus: 'idle',
+        chainSpecificStates: chains.reduce((acc, chain) => ({
+            ...acc,
+            [chain.id]: {
+                connectionStatus: chain.id === account.chain?.id ? 'connected' : 'disconnected',
+                lastConnected: chain.id === account.chain?.id ? new Date() : undefined
+            }
+        }), {} as Record<ConfiguredChainId, { connectionStatus: string; lastConnected?: Date }>)
       })
   })
   reconnect(config)
   
   export async function evmConnect(
     evmWalletId: EvmWalletId,
-    chainId: ConfiguredChainId = sepolia.id
+    chainId: ConfiguredChainId
   ) {
     const connector = config.connectors.find(connector => connector.id === evmWalletId)
     if (connector) return _connect(config, { connector, chainId })
@@ -240,3 +238,13 @@ import {
   }
   
   export const evmSwitchChain = (chainId: ConfiguredChainId) => _switchChain(config, { chainId })
+
+  interface EvmChainWalletStore extends ChainWalletStore<"evm"> {
+    availableChains: ConfiguredChainId[];
+    activeChain: ConfiguredChainId;
+    chainSwitchingStatus: 'idle' | 'switching' | 'error';
+    chainSpecificStates: Record<ConfiguredChainId, {
+        connectionStatus: string;
+        lastConnected?: Date;
+    }>;
+}

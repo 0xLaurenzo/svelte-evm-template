@@ -1,27 +1,33 @@
 <script lang="ts">
-    import { evmConnect, evmWalletsInformation, sepoliaStore } from "$lib/wallet/wallet";
+    import { evmConnect, evmWalletsArray, evmWalletStore } from "$lib/wallet/wallet";
     import type { EvmWalletId } from "$lib/wallet/wallet";
     import { slide } from 'svelte/transition';
     
     let isOpen = false;
     
-    $: address = $sepoliaStore.address;
-    $: isConnected = $sepoliaStore.connectionStatus === 'connected';
+    // Reactive statements to track wallet address and connection status
+    $: address = $evmWalletStore.address;
+    $: isConnected = $evmWalletStore.connectionStatus === 'connected';
 
-    function formatAddress(addr: string): string {
+    // Precomputed list of wallets
+    const wallets = evmWalletsArray;
+
+    // Format the wallet address for display
+    function formatAddress(addr: string | undefined): string {
         return addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : 'Connect Wallet';
     }
 
+    // Handle wallet connection
     async function handleWalletConnection(walletId: EvmWalletId) {
         try {
-            await evmConnect(walletId);
+            await evmConnect(walletId, 111_55_111); // Default chain ID
             isOpen = false;
-            // Handle successful connection
-        } catch (error) {   
-            // Handle connection error
+        } catch (error) {
+            console.error("Failed to connect wallet:", error);
         }
     }
 
+    // Toggle the dropdown menu
     function toggleDropdown() {
         isOpen = !isOpen;
     }
@@ -46,7 +52,7 @@
                    [&:has(>:last-child)]:left-auto [&:has(>:last-child)]:-right-0 [&:has(>:last-child)]:translate-x-0
                    sm:[&:has(>:last-child)]:left-1/2 sm:[&:has(>:last-child)]:-translate-x-1/2 sm:[&:has(>:last-child)]:right-auto"
         >
-            {#each evmWalletsInformation as wallet}
+            {#each wallets as wallet}
                 <button 
                     class="w-full px-4 py-2 text-left flex items-center gap-3 hover:bg-gray-50
                            transition-colors duration-200"
