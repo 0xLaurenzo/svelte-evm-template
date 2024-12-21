@@ -92,10 +92,7 @@ import { sepolia } from "viem/chains"
       availableChains: chains,
       activeChain: defaultChain,
       chainSwitchingStatus: 'idle',
-      chainSpecificStates: chains.reduce((acc, chain) => ({
-        ...acc,
-        [chain]: { connectionStatus: 'disconnected' as const }
-      }), {} as Record<ConfiguredChainId, { connectionStatus: string; lastConnected?: Date }>)
+      chainSpecificStates: initializeChainSpecificStates(chains, defaultChain)
     };
   }
   
@@ -203,6 +200,19 @@ import { sepolia } from "viem/chains"
   export const evmWalletsArray = evmWalletsInformation();
   export type EvmWalletId = (typeof evmWalletsArray)[number]["id"];
   
+  function initializeChainSpecificStates(
+    chains: ConfiguredChainId[],
+    activeChainId?: ConfiguredChainId
+  ): Record<ConfiguredChainId, { connectionStatus: string; lastConnected?: Date }> {
+    return chains.reduce((acc, chainId) => ({
+      ...acc,
+      [chainId]: {
+        connectionStatus: chainId === activeChainId ? 'connected' : 'disconnected',
+        lastConnected: chainId === activeChainId ? new Date() : undefined
+      }
+    }), {} as Record<ConfiguredChainId, { connectionStatus: string; lastConnected?: Date }>);
+  }
+  
   watchAccount(config, {
     onChange: account =>
       evmWalletStore.set({
@@ -214,13 +224,7 @@ import { sepolia } from "viem/chains"
         availableChains: chains.map(chain => chain.id),
         activeChain: account.chain?.id ?? sepolia.id,
         chainSwitchingStatus: 'idle',
-        chainSpecificStates: chains.reduce((acc, chain) => ({
-            ...acc,
-            [chain.id]: {
-                connectionStatus: chain.id === account.chain?.id ? 'connected' : 'disconnected',
-                lastConnected: chain.id === account.chain?.id ? new Date() : undefined
-            }
-        }), {} as Record<ConfiguredChainId, { connectionStatus: string; lastConnected?: Date }>)
+        chainSpecificStates: initializeChainSpecificStates(chains.map(chain => chain.id), account.chain?.id)
       })
   })
   reconnect(config)
