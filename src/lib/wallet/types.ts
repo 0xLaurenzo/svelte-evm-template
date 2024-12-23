@@ -2,12 +2,8 @@ import type { State } from '@wagmi/core';
 import type { Hex, Address } from 'viem';
 import type { chains } from '$lib/wallet/chains';
 
-/**
- * Represents a hexadecimal address with a "0x" prefix.
- */
-export type EvmAddress = Address;
 
-export type UserAddressEvm = {
+export type UserAddress = {
 	canonical: Address;
 	normalized: string;
 	normalized_prefixed: Address;
@@ -18,7 +14,7 @@ export type ChainMap = {
 	[K in ConfiguredChainId]: (typeof chains)[number] & { id: K };
 };
 
-export interface EvmChainWalletStore extends ChainWalletStore<'evm'> {
+export interface EvmWalletStore {
 	availableChains: ConfiguredChainId[];
 	activeChain: ConfiguredChainId;
 	chainSwitchingStatus: 'idle' | 'switching' | 'error';
@@ -29,20 +25,9 @@ export interface EvmChainWalletStore extends ChainWalletStore<'evm'> {
 			lastConnected?: Date;
 		}
 	>;
-}
-
-// shared types between wallets configs
-export type ChainWalletStore<TChainSource extends 'evm'> = {
-	chain:
-		| (TChainSource extends 'evm' ? 'sepolia' : TChainSource extends 'aptos' ? 'aptos' : 'cosmos')
-		| String;
+	chain: String;
 	hoverState: 'hover' | 'none';
-	address: TChainSource extends 'evm'
-		? EvmAddress | undefined
-		: TChainSource extends 'aptos'
-			? Hex | undefined
-			: string | undefined;
-	rawAddress?: TChainSource extends 'cosmos' ? Uint8Array | undefined : undefined;
+	address: Address | undefined;
 	connectionStatus: State['status'];
 	connectedWallet: string | undefined;
-};
+}

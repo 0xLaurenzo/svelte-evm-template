@@ -18,15 +18,14 @@ import type { Address } from 'viem';
 // TODO figure out why this sleep exists
 //   import { sleep } from "$lib/utilities"
 import { KEY } from '$lib/constants/keys';
-import type { UserAddressEvm } from '$lib/wallet/types';
+import type { UserAddress } from '$lib/wallet/types';
 import { APP_INFO } from '$lib/constants/app';
-import type { ChainWalletStore } from '$lib/wallet/types';
 import { derived, writable, type Readable } from 'svelte/store';
 import { injected, metaMask, coinbaseWallet } from '@wagmi/connectors';
 import { chains, chainTransports, chainMap } from './chains';
 import { type ConfiguredChainId } from '$lib/wallet/types';
 import { sepolia } from 'viem/chains';
-import { type EvmChainWalletStore } from '$lib/wallet/types';
+import { type EvmWalletStore } from '$lib/wallet/types';
 
 export const config = createConfig({
 	chains,
@@ -83,7 +82,7 @@ config.subscribe(
 function createInitialState(
 	chains: ConfiguredChainId[],
 	defaultChain: ConfiguredChainId
-): Omit<EvmChainWalletStore, 'rawAddress'> {
+): Omit<EvmWalletStore, 'rawAddress'> {
 	return {
 		chain: chainMap[defaultChain].name,
 		hoverState: 'none',
@@ -98,7 +97,7 @@ function createInitialState(
 }
 
 export function createEvmWalletStore(
-	initialState: Omit<EvmChainWalletStore, 'rawAddress'> = createInitialState(
+	initialState: EvmWalletStore = createInitialState(
 		chains.map((chain) => chain.id),
 		sepolia.id
 	)
@@ -144,7 +143,7 @@ export function createEvmWalletStore(
 
 export const evmWalletStore = createEvmWalletStore();
 
-export const userAddrEvm: Readable<UserAddressEvm | null> = derived(
+export const userAddrEvm: Readable<UserAddress | null> = derived(
 	[evmWalletStore],
 	([$evmWalletStore]) => {
 		if ($evmWalletStore?.address) {

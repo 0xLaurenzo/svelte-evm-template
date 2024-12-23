@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { writable } from 'svelte/store';
 	import { chainMap, chains } from '$lib/wallet/chains';
 	import { type ConfiguredChainId } from '$lib/wallet/types';
 	import { slide } from 'svelte/transition';
