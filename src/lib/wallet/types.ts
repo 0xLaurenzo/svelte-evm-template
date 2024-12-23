@@ -2,7 +2,6 @@ import type { State } from '@wagmi/core';
 import type { Hex, Address } from 'viem';
 import type { chains } from '$lib/wallet/chains';
 
-
 export type UserAddress = {
 	canonical: Address;
 	normalized: string;

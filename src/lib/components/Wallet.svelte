@@ -5,19 +5,16 @@
 
 	let isOpen = false;
 
-	// Reactive statements to track wallet address and connection status
 	$: address = $evmWalletStore.address;
 	$: isConnected = $evmWalletStore.connectionStatus === 'connected';
 
 	// Precomputed list of wallets
 	const wallets = evmWalletsArray;
 
-	// Format the wallet address for display
 	function formatAddress(addr: string | undefined): string {
 		return addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : 'Connect Wallet';
 	}
 
-	// Handle wallet connection
 	async function handleWalletConnection(walletId: EvmWalletId) {
 		try {
 			evmWalletStore.connect(walletId, 111_55_111); // Default chain ID
@@ -27,7 +24,10 @@
 		}
 	}
 
-	// Toggle the dropdown menu
+	async function disconnect() {
+		evmWalletStore.disconnect();
+	}
+
 	function toggleDropdown() {
 		isOpen = !isOpen;
 	}
@@ -52,16 +52,26 @@
                    [&:has(>:last-child)]:-right-0 [&:has(>:last-child)]:left-auto [&:has(>:last-child)]:translate-x-0
                    sm:[&:has(>:last-child)]:left-1/2 sm:[&:has(>:last-child)]:right-auto sm:[&:has(>:last-child)]:-translate-x-1/2"
 		>
-			{#each wallets as wallet}
+			{#if isConnected}
 				<button
-					class="flex w-full items-center gap-3 px-4 py-2 text-left transition-colors
-                           duration-200 hover:bg-gray-50"
-					on:click={() => handleWalletConnection(wallet.id)}
+					class="flex items-center justify-center gap-3 px-4 py-2 text-center transition-colors
+               duration-200 hover:bg-gray-50"
+					on:click={() => disconnect()}
 				>
-					<img src={wallet.icon} alt={wallet.name} class="h-6 w-6 object-contain" />
-					<span class="text-gray-700">{wallet.name}</span>
+					<span class="text-lg text-gray-700">disconnect</span>
 				</button>
-			{/each}
+			{:else}
+				{#each wallets as wallet}
+					<button
+						class="flex w-full items-center gap-3 px-4 py-2 text-left transition-colors
+                           duration-200 hover:bg-gray-50"
+						on:click={() => handleWalletConnection(wallet.id)}
+					>
+						<img src={wallet.icon} alt={wallet.name} class="h-6 w-6 object-contain" />
+						<span class="text-gray-700">{wallet.name}</span>
+					</button>
+				{/each}
+			{/if}
 		</div>
 	{/if}
 </div>
