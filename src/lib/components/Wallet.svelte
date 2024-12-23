@@ -47,15 +47,14 @@
 	{#if isOpen}
 		<div
 			transition:slide
-			class="absolute left-1/2 top-full z-10 mt-2 max-h-[80vh] w-56 -translate-x-1/2 overflow-y-auto
-                   rounded-lg border border-gray-200 bg-white py-1 shadow-lg
-                   [&:has(>:last-child)]:-right-0 [&:has(>:last-child)]:left-auto [&:has(>:last-child)]:translate-x-0
-                   sm:[&:has(>:last-child)]:left-1/2 sm:[&:has(>:last-child)]:right-auto sm:[&:has(>:last-child)]:-translate-x-1/2"
+			class="absolute left-1/2 top-full z-10 mt-2 w-auto -translate-x-1/2 overflow-y-auto
+                   rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
+			style="min-width: fit-content;"
 		>
 			{#if isConnected}
 				<button
 					class="flex items-center justify-center gap-3 px-4 py-2 text-center transition-colors
-               duration-200 hover:bg-gray-50"
+                           duration-200 hover:bg-gray-50 w-full"
 					on:click={() => disconnect()}
 				>
 					<span class="text-lg text-gray-700">disconnect</span>
@@ -64,7 +63,8 @@
 				{#each wallets as wallet}
 					<button
 						class="flex w-full items-center gap-3 px-4 py-2 text-left transition-colors
-                           duration-200 hover:bg-gray-50"
+                               duration-200 hover:bg-gray-50"
+						style="min-width: 200px; white-space: normal;"
 						on:click={() => handleWalletConnection(wallet.id)}
 					>
 						<img src={wallet.icon} alt={wallet.name} class="h-6 w-6 object-contain" />
