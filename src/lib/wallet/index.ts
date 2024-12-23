@@ -1,1 +1,1 @@
-export {evmWalletStore, evmWalletsArray, type EvmWalletId} from './wallet';
+export { evmWalletStore, evmWalletsArray, type EvmWalletId } from './wallet';
