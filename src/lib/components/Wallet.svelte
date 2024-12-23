@@ -1,6 +1,6 @@
 <script lang="ts">
-    import { evmWalletsArray, evmWalletStore } from "$lib/wallet/wallet";
-    import type { EvmWalletId } from "$lib/wallet/wallet";
+    import { evmWalletsArray, evmWalletStore } from "$lib/wallet";
+    import type { EvmWalletId } from "$lib/wallet";
     import { slide } from 'svelte/transition';
     
     let isOpen = false;

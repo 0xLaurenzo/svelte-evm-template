@@ -1,6 +1,6 @@
 <script lang="ts">
-	import ChainSelector from "./ChainSelector.svelte";
-import Wallet from "./Wallet.svelte";
+	import ChainSelector from "$lib/components/ChainSelector.svelte";
+	import Wallet from "$lib/components/Wallet.svelte";
 
 </script>
 

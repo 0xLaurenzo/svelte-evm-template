@@ -2,7 +2,7 @@
     import { writable } from 'svelte/store';
     import { chainMap, chains, type ConfiguredChainId } from '$lib/wallet/chains';
     import { slide } from 'svelte/transition';
-	import { evmWalletStore } from '$lib/wallet/wallet';
+	import { evmWalletStore } from '$lib/wallet';
 
     let isOpen = false;
     let selectedChain: ConfiguredChainId | null = null;
@@ -44,11 +44,11 @@
         {#if selectedChain}
             <img 
                 src={getChainLogoUrl(chainMap[selectedChain].name)} 
-                alt={`Logo for ${selectedChain}`} 
+                alt={`Logo for ${chainMap[selectedChain].name}`} 
                 class="inline-block w-6 h-6 mr-2"
                 on:error={event => event.target.style.display = 'none'}
             />
-            <span>{selectedChain}</span>
+            <span>{chainMap[selectedChain].name}</span>
         {:else}
             Select Chain
         {/if}
