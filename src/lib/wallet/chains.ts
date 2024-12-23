@@ -14,11 +14,6 @@ export const chains = [
   polygon,
 ] as const;
 
-export type ConfiguredChainId = (typeof chains)[number]["id"];
-export type ChainMap = {
-  [K in ConfiguredChainId]: (typeof chains)[number] & { id: K };
-};
-
 export const chainMap = chains.reduce((acc, chain) => {
   acc[chain.id] = chain;
   return acc;

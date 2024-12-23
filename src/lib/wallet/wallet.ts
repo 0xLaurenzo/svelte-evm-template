@@ -23,8 +23,10 @@ import {
   import type { ChainWalletStore } from "$lib/wallet/types"
   import { derived, writable, type Readable } from "svelte/store"
   import { injected, metaMask, coinbaseWallet } from "@wagmi/connectors"
-  import { chains, type ConfiguredChainId, chainTransports, chainMap } from './chains';
-import { sepolia } from "viem/chains"
+  import { chains, chainTransports, chainMap } from './chains'
+  import { type ConfiguredChainId } from '$lib/wallet/types'
+  import { sepolia } from "viem/chains"
+  import { type EvmChainWalletStore } from '$lib/wallet/types'
   
 
   export const config = createConfig({
@@ -242,13 +244,3 @@ import { sepolia } from "viem/chains"
   }
   
   const evmSwitchChain = (chainId: ConfiguredChainId) => _switchChain(config, { chainId })
-
-  interface EvmChainWalletStore extends ChainWalletStore<"evm"> {
-    availableChains: ConfiguredChainId[];
-    activeChain: ConfiguredChainId;
-    chainSwitchingStatus: 'idle' | 'switching' | 'error';
-    chainSpecificStates: Record<ConfiguredChainId, {
-        connectionStatus: string;
-        lastConnected?: Date;
-    }>;
-}
