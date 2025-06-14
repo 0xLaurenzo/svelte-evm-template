@@ -1,1 +1,1 @@
-export { evmWalletStore, evmWalletsArray, type EvmWalletId } from './wallet';
+export { wagmiAdapter, appkit } from './appkit';
