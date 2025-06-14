@@ -1,6 +1,5 @@
 <script lang="ts">
-	import ChainSelector from '$lib/components/ChainSelector.svelte';
-	import Wallet from '$lib/components/Wallet.svelte';
+	import WalletButton from '$lib/components/WalletButton.svelte';
 </script>
 
 <nav
@@ -17,7 +16,6 @@
 		<a href="/placeholder3" class="text-black hover:text-gray-600"> Placeholder 3 </a>
 	</div>
 	<div>
-		<ChainSelector />
-		<Wallet />
+		<WalletButton />
 	</div>
 </nav>
